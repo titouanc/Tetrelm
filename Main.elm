@@ -17,7 +17,7 @@ type alias State = {
     block: Tetris.Tetris Color,
     bi: Int, bj: Int,
     score: Int,
-    gameOver: Int}
+    gameOver: Bool}
 
 type alias Step = (State, Cmd Msg)
 
@@ -28,15 +28,15 @@ main = Html.program {
     subscriptions=subscriptions}
 
 init : Step
-init = ({game=Tetris.init, score=0, block=blockT, bi=0, bj=0, gameOver=-1}, randomBlock)
+init = ({game=Tetris.init, score=0, block=blockT, bi=0, bj=0, gameOver=False}, randomBlock)
 
 randomBlock : Cmd Msg
 randomBlock = R.generate NewBlock (R.int 0 (List.length blocks - 1))
 
 doTick : State -> Step
 doTick state =
-    if state.gameOver > 0
-    then return {state | gameOver=state.gameOver - 1}
+    if state.gameOver
+    then return state
     else let i = state.bi + 1
          in if Tetris.collide i state.bj state.block state.game
             then let game = Tetris.blit state.bi state.bj state.block state.game
@@ -45,10 +45,12 @@ doTick state =
 
 doDrop : State -> Step
 doDrop state =
-    let (r, c) = doTick state
-    in if c == Cmd.none
-       then doDrop r
-       else (r, c)
+    if state.gameOver
+    then init
+    else let (r, c) = doTick state
+         in if c == Cmd.none
+            then doDrop r
+            else (r, c)
 
 move : Int -> State -> Step
 move direction state =
@@ -61,7 +63,12 @@ move direction state =
     in return res
 
 rotate : State -> Step
-rotate state = return {state | block=Tetris.rotate state.block}
+rotate state = 
+    let block = Tetris.rotate state.block
+        j = if state.bj + block.cols > state.game.cols
+            then state.game.cols - block.cols
+            else state.bj
+    in return {state | block=block, bj=j}
 
 newBlock : Int -> State -> Step
 newBlock idx state =
@@ -69,14 +76,12 @@ newBlock idx state =
         (lines, game) = Tetris.cleanLines state.game
         points = lines*lines
         score = state.score + points
-        (bi, bj) = (-1, state.game.cols // 2)
-    in return {game=game, block=blk, bi=bi, bj=bj, gameOver=-1, score=score}
+        (bi, bj) = (-1, (state.game.cols // 2) - 1)
+    in return {state | game=game, block=blk, bi=bi, bj=bj, score=score}
 
 return : State -> Step
-return state = if state.gameOver == 0 then
-                   init
-               else if Tetris.gameOver state.game && state.gameOver < 0  then
-                   ({state | gameOver=5}, Cmd.none)
+return state = if Tetris.gameOver state.game && not state.gameOver then
+                   ({state | gameOver=True}, Cmd.none)
                else
                    (state, Cmd.none)
 
@@ -122,11 +127,13 @@ viewGame state = [
         li [] [text "DOWN: move piece down"],
         li [] [text "ENTER: drop piece"]]]
 
-viewFail = [h3 [Attr.style [("color", "red"), ("font-size", "200%")]] [text "GAME OVER"]]
+viewFail = [
+    h1 [Attr.style [("color", "red"), ("font-size", "200%")]] [text "GAME OVER"],
+    h3 [] [text "Tap ENTER to restart"]]
 
 view : State -> Html Msg
 view state = 
-    let content = if Tetris.gameOver state.game
+    let content = if state.gameOver
                   then viewFail
                   else viewGame state
     in div [Attr.style [("margin", "20px")]] content
