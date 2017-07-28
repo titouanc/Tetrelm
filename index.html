@@ -10419,7 +10419,7 @@ var _user$project$Graphics$toSvg = F3(
 var _user$project$Main$viewFail = {
 	ctor: '::',
 	_0: A2(
-		_elm_lang$html$Html$h3,
+		_elm_lang$html$Html$h1,
 		{
 			ctor: '::',
 			_0: _elm_lang$html$Html_Attributes$style(
@@ -10439,7 +10439,18 @@ var _user$project$Main$viewFail = {
 			_0: _elm_lang$svg$Svg$text('GAME OVER'),
 			_1: {ctor: '[]'}
 		}),
-	_1: {ctor: '[]'}
+	_1: {
+		ctor: '::',
+		_0: A2(
+			_elm_lang$html$Html$h3,
+			{ctor: '[]'},
+			{
+				ctor: '::',
+				_0: _elm_lang$svg$Svg$text('Tap ENTER to restart'),
+				_1: {ctor: '[]'}
+			}),
+		_1: {ctor: '[]'}
+	}
 };
 var _user$project$Main$height = 400;
 var _user$project$Main$width = 200;
@@ -10532,7 +10543,7 @@ var _user$project$Main$viewGame = function (state) {
 	};
 };
 var _user$project$Main$view = function (state) {
-	var content = _user$project$Tetris$gameOver(state.game) ? _user$project$Main$viewFail : _user$project$Main$viewGame(state);
+	var content = state.gameOver ? _user$project$Main$viewFail : _user$project$Main$viewGame(state);
 	return A2(
 		_elm_lang$html$Html$div,
 		{
@@ -10547,6 +10558,53 @@ var _user$project$Main$view = function (state) {
 		},
 		content);
 };
+var _user$project$Main$return = function (state) {
+	return (_user$project$Tetris$gameOver(state.game) && (!state.gameOver)) ? {
+		ctor: '_Tuple2',
+		_0: _elm_lang$core$Native_Utils.update(
+			state,
+			{gameOver: true}),
+		_1: _elm_lang$core$Platform_Cmd$none
+	} : {ctor: '_Tuple2', _0: state, _1: _elm_lang$core$Platform_Cmd$none};
+};
+var _user$project$Main$newBlock = F2(
+	function (idx, state) {
+		var _p0 = {ctor: '_Tuple2', _0: -1, _1: ((state.game.cols / 2) | 0) - 1};
+		var bi = _p0._0;
+		var bj = _p0._1;
+		var _p1 = _user$project$Tetris$cleanLines(state.game);
+		var lines = _p1._0;
+		var game = _p1._1;
+		var points = lines * lines;
+		var score = state.score + points;
+		var blk = A2(
+			_elm_lang$core$Maybe$withDefault,
+			_user$project$Blocks$blockT,
+			_elm_lang$core$List$head(
+				A2(_elm_lang$core$List$drop, idx, _user$project$Blocks$blocks)));
+		return _user$project$Main$return(
+			_elm_lang$core$Native_Utils.update(
+				state,
+				{game: game, block: blk, bi: bi, bj: bj, score: score}));
+	});
+var _user$project$Main$rotate = function (state) {
+	var block = _user$project$Tetris$rotate(state.block);
+	var j = (_elm_lang$core$Native_Utils.cmp(state.bj + block.cols, state.game.cols) > 0) ? (state.game.cols - block.cols) : state.bj;
+	return _user$project$Main$return(
+		_elm_lang$core$Native_Utils.update(
+			state,
+			{block: block, bj: j}));
+};
+var _user$project$Main$move = F2(
+	function (direction, state) {
+		var j = state.bj + direction;
+		var collision = A4(_user$project$Tetris$collide, state.bi, j, state.block, state.game);
+		var onGrid = (_elm_lang$core$Native_Utils.cmp(j + state.block.cols, state.game.cols) < 1) && (_elm_lang$core$Native_Utils.cmp(j, 0) > -1);
+		var res = (onGrid && (!collision)) ? _elm_lang$core$Native_Utils.update(
+			state,
+			{bj: j}) : state;
+		return _user$project$Main$return(res);
+	});
 var _user$project$Main$State = F6(
 	function (a, b, c, d, e, f) {
 		return {game: a, block: b, bi: c, bj: d, score: e, gameOver: f};
@@ -10563,60 +10621,12 @@ var _user$project$Main$randomBlock = A2(
 		_elm_lang$core$List$length(_user$project$Blocks$blocks) - 1));
 var _user$project$Main$init = {
 	ctor: '_Tuple2',
-	_0: {game: _user$project$Tetris$init, score: 0, block: _user$project$Blocks$blockT, bi: 0, bj: 0, gameOver: -1},
+	_0: {game: _user$project$Tetris$init, score: 0, block: _user$project$Blocks$blockT, bi: 0, bj: 0, gameOver: false},
 	_1: _user$project$Main$randomBlock
 };
-var _user$project$Main$return = function (state) {
-	return _elm_lang$core$Native_Utils.eq(state.gameOver, 0) ? _user$project$Main$init : ((_user$project$Tetris$gameOver(state.game) && (_elm_lang$core$Native_Utils.cmp(state.gameOver, 0) < 0)) ? {
-		ctor: '_Tuple2',
-		_0: _elm_lang$core$Native_Utils.update(
-			state,
-			{gameOver: 5}),
-		_1: _elm_lang$core$Platform_Cmd$none
-	} : {ctor: '_Tuple2', _0: state, _1: _elm_lang$core$Platform_Cmd$none});
-};
-var _user$project$Main$move = F2(
-	function (direction, state) {
-		var j = state.bj + direction;
-		var collision = A4(_user$project$Tetris$collide, state.bi, j, state.block, state.game);
-		var onGrid = (_elm_lang$core$Native_Utils.cmp(j + state.block.cols, state.game.cols) < 1) && (_elm_lang$core$Native_Utils.cmp(j, 0) > -1);
-		var res = (onGrid && (!collision)) ? _elm_lang$core$Native_Utils.update(
-			state,
-			{bj: j}) : state;
-		return _user$project$Main$return(res);
-	});
-var _user$project$Main$rotate = function (state) {
-	var block = _user$project$Tetris$rotate(state.block);
-	var j = (_elm_lang$core$Native_Utils.cmp(state.bj + block.cols, state.game.cols) > 0) ? (state.game.cols - block.cols) : state.bj;
-	return _user$project$Main$return(
-		_elm_lang$core$Native_Utils.update(
-			state,
-			{block: block, bj: j}));
-};
-var _user$project$Main$newBlock = F2(
-	function (idx, state) {
-		var _p0 = {ctor: '_Tuple2', _0: -1, _1: (state.game.cols / 2) | 0};
-		var bi = _p0._0;
-		var bj = _p0._1;
-		var _p1 = _user$project$Tetris$cleanLines(state.game);
-		var lines = _p1._0;
-		var game = _p1._1;
-		var points = lines * lines;
-		var score = state.score + points;
-		var blk = A2(
-			_elm_lang$core$Maybe$withDefault,
-			_user$project$Blocks$blockT,
-			_elm_lang$core$List$head(
-				A2(_elm_lang$core$List$drop, idx, _user$project$Blocks$blocks)));
-		return _user$project$Main$return(
-			{game: game, block: blk, bi: bi, bj: bj, gameOver: -1, score: score});
-	});
 var _user$project$Main$doTick = function (state) {
-	if (_elm_lang$core$Native_Utils.cmp(state.gameOver, 0) > 0) {
-		return _user$project$Main$return(
-			_elm_lang$core$Native_Utils.update(
-				state,
-				{gameOver: state.gameOver - 1}));
+	if (state.gameOver) {
+		return _user$project$Main$return(state);
 	} else {
 		var i = state.bi + 1;
 		if (A4(_user$project$Tetris$collide, i, state.bj, state.block, state.game)) {
@@ -10639,15 +10649,19 @@ var _user$project$Main$doTick = function (state) {
 var _user$project$Main$doDrop = function (state) {
 	doDrop:
 	while (true) {
-		var _p2 = _user$project$Main$doTick(state);
-		var r = _p2._0;
-		var c = _p2._1;
-		if (_elm_lang$core$Native_Utils.eq(c, _elm_lang$core$Platform_Cmd$none)) {
-			var _v0 = r;
-			state = _v0;
-			continue doDrop;
+		if (state.gameOver) {
+			return _user$project$Main$init;
 		} else {
-			return {ctor: '_Tuple2', _0: r, _1: c};
+			var _p2 = _user$project$Main$doTick(state);
+			var r = _p2._0;
+			var c = _p2._1;
+			if (_elm_lang$core$Native_Utils.eq(c, _elm_lang$core$Platform_Cmd$none)) {
+				var _v0 = r;
+				state = _v0;
+				continue doDrop;
+			} else {
+				return {ctor: '_Tuple2', _0: r, _1: c};
+			}
 		}
 	}
 };
