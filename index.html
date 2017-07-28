@@ -10586,12 +10586,12 @@ var _user$project$Main$move = F2(
 		return _user$project$Main$return(res);
 	});
 var _user$project$Main$rotate = function (state) {
+	var block = _user$project$Tetris$rotate(state.block);
+	var j = (_elm_lang$core$Native_Utils.cmp(state.bj + block.cols, state.game.cols) > 0) ? (state.game.cols - block.cols) : state.bj;
 	return _user$project$Main$return(
 		_elm_lang$core$Native_Utils.update(
 			state,
-			{
-				block: _user$project$Tetris$rotate(state.block)
-			}));
+			{block: block, bj: j}));
 };
 var _user$project$Main$newBlock = F2(
 	function (idx, state) {
